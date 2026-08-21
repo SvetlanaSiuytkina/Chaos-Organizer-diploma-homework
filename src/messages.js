@@ -1,4 +1,4 @@
-import { formatTime, makeLinksClickable } from './formatters.js';
+import { formatTime, makeLinksClickable, formatFileSize } from './formatters.js';
 
 export const messages = [];
 
@@ -22,8 +22,9 @@ export function renderMessages() {
     div.className = `message ${msg.type}`;
 
     if (msg.text) {
-      const safeText = makeLinksClickable(msg.text);
-      div.innerHTML = `<div>${safeText}</div><span class="timestamp">${msg.timestamp}</span>`;
+      const textBlock = document.createElement('div');
+      textBlock.innerHTML = makeLinksClickable(msg.text);
+      div.appendChild(textBlock);
     }
 
     if (msg.file) {
@@ -35,6 +36,7 @@ export function renderMessages() {
       link.textContent = `📎 \${msg.file.name}`;
       link.target = 'blank';
       link.rel = 'noopener noreferrer';
+      link.download = msg.file.name;
       
       fileDiv.appendChild(link);
       fileDiv.appendChild(document.createElement('span'));

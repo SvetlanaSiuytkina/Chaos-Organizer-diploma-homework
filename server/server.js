@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
-import cors from '@koa/cors';;
+import cors from '@koa/cors';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -44,7 +44,19 @@ app.use(koaBody({
 
 //API получить сообщ
 router.get('/api/messages', (ctx) => {
-  ctx.body = messages.reverse(); 
+  const offset = parseInt(ctx.query.offset) || 0;
+  const limit = parseInt(ctx.query.limit) || 10;
+
+  const total = messages.length;
+  const paginated = messages
+    .slice(Math.max(0, total - offset - limit), total - offset)
+    .reverse();
+
+  ctx.body = {
+    messages: paginated,
+    hasMore: offset + limit < total,
+    offset: offset + limit
+  }
 });
 
 //API отправить cообщ
@@ -83,6 +95,8 @@ router.post('/api/upload', async (ctx) => {
   const savePath = path.join(uploadDir, uniqueName);
 
   fs.renameSync(file.path, savePath);
+
+  const fileUrl = `/uploads/${uniqueName}`;
 
   ctx.body = {
     name: originalName,
