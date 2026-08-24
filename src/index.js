@@ -1,4 +1,8 @@
-import { addOutgoingMessage, renderMessages, messages } from './messages.js';
+import {
+  addOutgoingMessage, renderMessages, messages,
+  pinnedMessageId, loadFromLocalStorage, saveToLocalStorage
+} from './messages.js';
+
 import { handleFile } from './files.js';
 import './style.css';
 
@@ -6,6 +10,7 @@ const sendBtn = document.getElementById('send-btn');
 const messageInput = document.getElementById('message-input');
 const messagesContainer = document.getElementById('messages');
 const searchInput = document.getElementById('search-input');
+const geoBtn = document.getElementById('geo-btn');
 
 let currentOffset = 0;
 const limit = 10;
@@ -13,12 +18,19 @@ let loading = false;
 let hasMore = true;
 let currentSearchQuery = '';
 
+document.addEventListener('DOMContentLoaded', () => {
+  loadMoreMessages();
+  renderMessages(); 
+  loadMoreMessages(); 
+});
+
 async function loadMoreMessages() {
   if (loading || !hasMore) return;
   loading = true;
   
   try {
-    const response = await fetch(`/api/messages?offset=${currentOffset}&limit=${limit}`);
+    let url = `/api/messages?offset=${currentOffset}&limit=${limit}`;
+    const response = await fetch(url);
 
     if (!response.ok) throw new Error('Ошибка сети');
 
@@ -46,6 +58,10 @@ async function loadMoreMessages() {
   }
 }
 
+saveToLocalStorage();
+renderMessages();
+currentOffset = data.offset;
+
 messagesContainer.addEventListener('scroll', () => {
   if (messagesContainer.scrollTop === 0 && hasMore && !loading) {
     loadMoreMessages();
@@ -55,19 +71,43 @@ messagesContainer.addEventListener('scroll', () => {
 if (searchInput) {
   searchInput.addEventListener('input', (e) => {
     const query = e.target.value.toLowerCase().trim();
-    currentSearchQuery = query;
+    currentOffset = 0;
+    hasMore = true;
 
-    if (!query) {
-      renderMessages();
+    messages.length = 0; 
+    renderMessages(); 
+    loadMoreMessages(); 
+  });
+}
+
+if (geoBtn) {
+  geoBtn.addEventListener('click', () => {
+    if (!navigator.geolocation) {
+      alert('Геолокация не поддерживается вашим браузером');
       return;
     }
-    const filtered = messages.filter(m => {
-      const hasTextMatch = m.text && m.text.toLowerCase().includes(query);
-      const hasFileMatch = m.file && m.file.name.toLowerCase().includes(query);
-      return hasTextMatch || hasFileMatch;
-    });
 
-    renderMessages(filtered);
+    geoBtn.disabled = true;
+    geoBtn.textContent = 'Получение координат...';
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        const geoText = `📍 Моя геолокация:\nШирота: ${lat.toFixed(6)}\nДолгота: ${lon.toFixed(6)}`;
+        
+        addOutgoingMessage(geoText);
+        
+        geoBtn.disabled = false;
+        geoBtn.textContent = '🗺️ Геолокация';
+      },
+      (error) => {
+        console.error('Ошибка получения геолокации:', error);
+        alert('Не удалось получить координаты. Проверьте разрешения браузера');
+        geoBtn.disabled = false;
+        geoBtn.textContent = '🗺️ Геолокация';
+      }
+    );
   });
 }
 

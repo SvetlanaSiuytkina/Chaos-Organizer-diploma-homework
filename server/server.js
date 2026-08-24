@@ -29,7 +29,10 @@ let messages = [
     id: uuidv4(),
     text: 'Добро пожаловать в Chaos Organizer!',
     type: 'incoming',
-    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    pinned: false,
+    favorited: false,
+    file: null
   }
 ]
 
@@ -46,9 +49,16 @@ app.use(koaBody({
 router.get('/api/messages', (ctx) => {
   const offset = parseInt(ctx.query.offset) || 0;
   const limit = parseInt(ctx.query.limit) || 10;
+  const query = ctx.query.q?.toLowerCase() || '';
+
+  let filteredMessages = messages.filter(msg => {
+    const textMatch = msg.text && msg.text.toLowerCase().includes(query);
+    const fileMatch = msg.file && msg.file.name.toLowerCase().includes(query);
+    return textMatch || fileMatch;
+  });
 
   const total = messages.length;
-  const paginated = messages
+  const paginated = filteredMessages
     .slice(Math.max(0, total - offset - limit), total - offset)
     .reverse();
 
@@ -71,9 +81,12 @@ router.post('/api/messages', async (ctx) => {
 
   const newMessage = {
     id: uuidv4(),
-    text: text.trim(),
+    text,
     type: 'outgoing',
     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    pinned: false,
+    favorited: false,
+    file: null  
   };
 
   messages.push(newMessage);
