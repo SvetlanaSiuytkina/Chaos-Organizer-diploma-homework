@@ -1,3 +1,5 @@
+[![pages-build-deployment](https://github.com/SvetlanaSiuytkina/Chaos-Organizer-diploma-homework/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/SvetlanaSiuytkina/Chaos-Organizer-diploma-homework/actions/workflows/pages/pages-build-deployment)
+
 # Chaos Organizer
 
 Бот-органайзер в стиле Telegram
@@ -12,10 +14,9 @@
 ## Технологии
 
 - Webpack, Babel, ESLint
-- Чистый JavaScript (ES6+)
+- JavaScript (ES6+)
 - HTML5, CSS3
 
 ## Скриншоты
 
-![Интерфейс чата] ()
-![Загрузка файла] ()
+![Интерфейс чата](screenshots/screen.png)
