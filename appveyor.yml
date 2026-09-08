@@ -9,7 +9,12 @@ build_script:
   - npm run build
 
 after_build:
+after_build:
   - git config --global user.name "AppVeyor CI"
   - git config --global user.email "ci@appveyor.com"
-  - cd dist && git init && git add . && git commit -m "Deploy to GitHub Pages"
+  - cd dist
+  - git init
+  - git add .
+  - git commit -m "Deploy to GitHub Pages"
+  - git branch -M gh-pages || true
   - git push --force https://${ACCESS_TOKEN}@github.com/svetlanasiuytkina/Chaos-Organizer-diploma-homework.git gh-pages
