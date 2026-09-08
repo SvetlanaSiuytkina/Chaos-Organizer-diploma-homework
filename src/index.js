@@ -1,8 +1,4 @@
-import {
-  addOutgoingMessage, renderMessages, messages,
-  pinnedMessageId, loadFromLocalStorage, saveToLocalStorage
-} from './messages.js';
-
+import { addOutgoingMessage, renderMessages, messages, pinnedMessageId, loadFromLocalStorage, saveToLocalStorage } from './messages.js';
 import { handleFile } from './files.js';
 import './style.css';
 
@@ -18,10 +14,10 @@ let loading = false;
 let hasMore = true;
 let currentSearchQuery = '';
 
+loadFromLocalStorage(); 
+
 document.addEventListener('DOMContentLoaded', () => {
   loadMoreMessages();
-  renderMessages(); 
-  loadMoreMessages(); 
 });
 
 async function loadMoreMessages() {
@@ -30,6 +26,10 @@ async function loadMoreMessages() {
   
   try {
     let url = `/api/messages?offset=${currentOffset}&limit=${limit}`;
+    if (currentSearchQuery) {
+      url += `&q=${encodeURIComponent(currentSearchQuery)}`;
+    }
+
     const response = await fetch(url);
 
     if (!response.ok) throw new Error('Ошибка сети');
@@ -42,12 +42,17 @@ async function loadMoreMessages() {
       return;
     }
 
+    // добавляем новые сообщения в начало массива
     data.messages.forEach(msg => {
-      messages.unshift(msg);
+      // проверка, чтобы не дублировать сообщения, которые уже есть в localStorage
+      if (!messages.find(m => m.id === msg.id)) {
+        messages.unshift(msg);
+      }
     });
 
     renderMessages();
-    currentOffset = data.offset;
+    
+    currentOffset = data.offset; 
 
     if (!data.hasMore) {
       hasMore = false;
@@ -58,28 +63,27 @@ async function loadMoreMessages() {
   }
 }
 
-saveToLocalStorage();
-renderMessages();
-currentOffset = data.offset;
-
+// обработчик скролла для ленивой подгрузки
 messagesContainer.addEventListener('scroll', () => {
   if (messagesContainer.scrollTop === 0 && hasMore && !loading) {
     loadMoreMessages();
   }
 });
 
+// поиск
 if (searchInput) {
   searchInput.addEventListener('input', (e) => {
     const query = e.target.value.toLowerCase().trim();
+    currentSearchQuery = query;
     currentOffset = 0;
     hasMore = true;
 
-    messages.length = 0; 
-    renderMessages(); 
+    messagesContainer.innerHTML = ''; 
     loadMoreMessages(); 
   });
 }
 
+// геолокация
 if (geoBtn) {
   geoBtn.addEventListener('click', () => {
     if (!navigator.geolocation) {
@@ -111,7 +115,7 @@ if (geoBtn) {
   });
 }
 
-//oтправк текста
+// отправка текста
 function sendMessage() {
   const text = messageInput.value.trim();
 

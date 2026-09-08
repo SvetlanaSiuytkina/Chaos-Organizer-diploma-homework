@@ -1,6 +1,7 @@
 import { formatTime, formatFileSize } from './formatters.js';
 import { messages, renderMessages } from './messages.js';
 
+const apiUrl = 'http://localhost:7070';
 const fileDropZone = document.getElementById('file-drop-zone');
 const fileInput = document.getElementById('file-input');
 
@@ -46,7 +47,7 @@ export async function handleFile(file) {
   formData.append('file', file);
 
   try {
-    const response = await fetch('/api/upload', {
+    const response = await fetch(`${apiUrl}/api/upload`, {
       method: 'POST',
       body: formData,
     });

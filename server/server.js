@@ -1,5 +1,5 @@
 import Koa from 'koa';
-import Router from 'koa-router';
+import Router from '@koa/router';
 import koaBody from 'koa-body';
 import koaStatic from 'koa-static';
 import path from 'path';
@@ -17,12 +17,14 @@ const router = new Router();
 const port = process.env.PORT || 7070;
 
 //папка для загруженных файлов
-const uploadDir = path.join(__dirname, '../public/uploads');
+const uploadDir = path.join(__dirname, '../uploads');
 
 //cоздаем папку
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
+
+console.log('Папка для загрузок:', uploadDir);
 
 let messages = [
   {
@@ -42,8 +44,10 @@ app.use(cors());
 //Middleware парсинг JSON и файлов
 app.use(koaBody({
   multipart: true,
-  formidable: { uploadDir, keepExtensions: true },
+  formidable: { keepExtensions: true },
 }));
+
+app.use(koaStatic(uploadDir));
 
 //API получить сообщ
 router.get('/api/messages', (ctx) => {
@@ -107,15 +111,22 @@ router.post('/api/upload', async (ctx) => {
   const uniqueName = `${Date.now()}_${originalName}`;
   const savePath = path.join(uploadDir, uniqueName);
 
-  fs.renameSync(file.path, savePath);
-
-  const fileUrl = `/uploads/${uniqueName}`;
-
-  ctx.body = {
-    name: originalName,
-    size: (file.size / 1024 / 1024).toFixed(2) + ' MB',
-    url: fileUrl,
-  };
+  try {
+    await fs.promises.copyFile(tempPath, savePath);
+    const host = ctx.request.header.host;
+    const protocol = ctx.req.socket.encrypted ? 'https' : 'http';
+    const fileUrl = `${protocol}://${host}/uploads/\${uniqueName}`;
+    
+    ctx.body = {
+      name: originalName,
+      size: (file.size / 1024 / 1024).toFixed(2) + ' MB',
+      url: fileUrl,
+    };
+  } catch (err) {
+    console.error('Ошибка сохранения файла:', err);
+    ctx.status = 500;
+    ctx.body = { error: 'Ошибка сервера при сохранении файла' };
+  }
 });
 
 app.use(router.routes());
