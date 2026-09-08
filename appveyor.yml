@@ -9,7 +9,6 @@ build_script:
   - npm run build
 
 after_build:
-after_build:
   - git config --global user.name "AppVeyor CI"
   - git config --global user.email "ci@appveyor.com"
   - cd dist
